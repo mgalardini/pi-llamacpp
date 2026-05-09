@@ -118,8 +118,8 @@ type ManagedModel = {
 
 const MODELS: ManagedModel[] = [
 	{
-		id: "qwen-3.6-2bit",
-		name: "qwen-3.6-2bit",
+		id: "qwen-3.6-moe-2bit",
+		name: "qwen-3.6-moe-2bit",
 		repo: QWEN_35B_A3B_REPO,
 		revision: QWEN_35B_A3B_REVISION,
 		quant: "q2",
@@ -129,8 +129,8 @@ const MODELS: ManagedModel[] = [
 		sha256: "c723e9516bf0b21a85390277913a1642f4644b221309518daac3a8d51a3a5850",
 	},
 	{
-		id: "qwen-3.6-4bit",
-		name: "qwen-3.6-4bit",
+		id: "qwen-3.6-moe-4bit",
+		name: "qwen-3.6-moe-4bit",
 		repo: QWEN_35B_A3B_REPO,
 		revision: QWEN_35B_A3B_REVISION,
 		quant: "q4",
@@ -140,8 +140,8 @@ const MODELS: ManagedModel[] = [
 		sha256: "ab94e2da12d2bdc22777ba1b7422bbf8d5d9d0bee1164ca7343a0cee3310038a",
 	},
 	{
-		id: "qwen-3.6-8bit",
-		name: "qwen-3.6-8bit",
+		id: "qwen-3.6-moe-8bit",
+		name: "qwen-3.6-moe-8bit",
 		repo: QWEN_35B_A3B_REPO,
 		revision: QWEN_35B_A3B_REVISION,
 		quant: "q8",
@@ -151,8 +151,8 @@ const MODELS: ManagedModel[] = [
 		sha256: "3720209c5729265b0967445e3f4d2d46d6455bc21123958fd4cac203f3277478",
 	},
 	{
-		id: "qwen-3.6-27b-2bit",
-		name: "qwen-3.6-27b-2bit",
+		id: "qwen-3.6-dense-2bit",
+		name: "qwen-3.6-dense-2bit",
 		repo: QWEN_27B_REPO,
 		revision: QWEN_27B_REVISION,
 		quant: "q2",
@@ -162,8 +162,8 @@ const MODELS: ManagedModel[] = [
 		sha256: "69c06c105d5e7d8a5ad9c0ead59fbcfdf7e2a7ea7d9338aadfe70fc9b0f133bf",
 	},
 	{
-		id: "qwen-3.6-27b-4bit",
-		name: "qwen-3.6-27b-4bit",
+		id: "qwen-3.6-dense-4bit",
+		name: "qwen-3.6-dense-4bit",
 		repo: QWEN_27B_REPO,
 		revision: QWEN_27B_REVISION,
 		quant: "q4",
@@ -173,8 +173,8 @@ const MODELS: ManagedModel[] = [
 		sha256: "c2275978182b91ec0f0a2e334e37e4fbfc8385eb9b3cdb6d5d4f7e23fce3b557",
 	},
 	{
-		id: "qwen-3.6-27b-8bit",
-		name: "qwen-3.6-27b-8bit",
+		id: "qwen-3.6-dense-8bit",
+		name: "qwen-3.6-dense-8bit",
 		repo: QWEN_27B_REPO,
 		revision: QWEN_27B_REVISION,
 		quant: "q8",
