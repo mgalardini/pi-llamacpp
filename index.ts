@@ -1295,14 +1295,16 @@ function serverArgs(model: ManagedModel, modelFile: string, port: number): strin
 		"auto",
 	];
 
+	const mtpSetting = process.env.LLAMACPP_ENABLE_MTP?.toLowerCase();
+	const enableMtp = mtpSetting !== "0" && mtpSetting !== "false" && mtpSetting !== "no";
+
 	const parallel = process.env.LLAMACPP_PARALLEL;
 	if (parallel) args.push("--parallel", parallel);
+	else if (enableMtp) args.push("--parallel", "1");
 
 	const gpuLayers = process.env.LLAMACPP_GPU_LAYERS;
 	if (gpuLayers) args.push("--n-gpu-layers", gpuLayers);
 
-	const mtpSetting = process.env.LLAMACPP_ENABLE_MTP?.toLowerCase();
-	const enableMtp = mtpSetting !== "0" && mtpSetting !== "false" && mtpSetting !== "no";
 	if (enableMtp) args.push("--spec-type", "mtp", "--spec-draft-n-max", process.env.LLAMACPP_MTP_DRAFT_N_MAX ?? "3");
 
 	const extra = process.env.LLAMACPP_SERVER_ARGS;
