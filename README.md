@@ -13,7 +13,6 @@ Currently registered:
 
 - `llamacpp/qwen-3.6-2bit`
 - `llamacpp/qwen-3.6-4bit`
-- `llamacpp/qwen-3.6-6bit`
 - `llamacpp/qwen-3.6-8bit`
 
 All are downloaded from

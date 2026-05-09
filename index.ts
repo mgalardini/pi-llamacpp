@@ -79,7 +79,7 @@ const WATCHDOG_SCRIPT = process.env.LLAMACPP_WATCHDOG_SCRIPT
 	? resolve(process.env.LLAMACPP_WATCHDOG_SCRIPT)
 	: join(EXTENSION_DIR, WATCHDOG_SCRIPT_NAME);
 
-type ModelQuant = "q2" | "q4" | "q6" | "q8";
+type ModelQuant = "q2" | "q4" | "q8";
 
 type ManagedModel = {
 	id: string;
@@ -109,15 +109,6 @@ const MODELS: ManagedModel[] = [
 		filename: "Qwen3.6-35B-A3B-MTP-UD-Q4_K_XL.gguf",
 		size: 23_257_919_904,
 		sha256: "ab94e2da12d2bdc22777ba1b7422bbf8d5d9d0bee1164ca7343a0cee3310038a",
-	},
-	{
-		id: "qwen-3.6-6bit",
-		name: "qwen-3.6-6bit",
-		quant: "q6",
-		bits: 6,
-		filename: "Qwen3.6-35B-A3B-MTP-UD-Q6_K_XL.gguf",
-		size: 32_741_241_248,
-		sha256: "db069dec4a81547762531db14bbefd4fce614816760c7f554171636784783e7d",
 	},
 	{
 		id: "qwen-3.6-8bit",
