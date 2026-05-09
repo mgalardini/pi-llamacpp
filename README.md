@@ -65,8 +65,8 @@ Environment overrides:
 - `LLAMACPP_MAX_TOKENS`: registered max output tokens (default `65536`)
 - `LLAMACPP_GPU_LAYERS`: passed to `--n-gpu-layers`
 - `LLAMACPP_PARALLEL`: passed to `--parallel`
-- `LLAMACPP_ENABLE_MTP=1`: pass `--spec-type mtp --spec-draft-n-max 3` (requires a llama.cpp build with MTP support; the default `b9090` release does not expose this flag)
-- `LLAMACPP_MTP_DRAFT_N_MAX`: override MTP draft max when MTP is enabled (default `3`)
+- `LLAMACPP_ENABLE_MTP=0`: disable `--spec-type mtp --spec-draft-n-max 3` (enabled by default; requires the default source build or another llama.cpp build with MTP support)
+- `LLAMACPP_MTP_DRAFT_N_MAX`: override MTP draft max (default `3`, matching the model repo recommendation)
 - `LLAMACPP_SERVER_ARGS`: extra whitespace-separated `llama-server` args
 - `LLAMACPP_READY_TIMEOUT_MS`: server startup timeout
 
