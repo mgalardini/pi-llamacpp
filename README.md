@@ -11,6 +11,8 @@ first use, starts `llama-server`, and stops it automatically when pi shuts down.
 
 Currently registered:
 
+### Qwen3.6 (from froggeric / havenoammo)
+
 - `llamacpp/qwen-3.6-dense-2bit` (27B dense)
 - `llamacpp/qwen-3.6-dense-4bit` (27B dense)
 - `llamacpp/qwen-3.6-dense-8bit` (27B dense)
@@ -18,15 +20,27 @@ Currently registered:
 - `llamacpp/qwen-3.6-moe-4bit` (35B-A3B MoE)
 - `llamacpp/qwen-3.6-moe-8bit` (35B-A3B MoE)
 
+### Gemma 4 (from unsloth)
+
+- `llamacpp/gemma-4-dense-2bit` (31B dense)
+- `llamacpp/gemma-4-dense-4bit` (31B dense)
+- `llamacpp/gemma-4-dense-8bit` (31B dense)
+- `llamacpp/gemma-4-moe-2bit` (26B-A4B MoE)
+- `llamacpp/gemma-4-moe-4bit` (26B-A4B MoE)
+- `llamacpp/gemma-4-moe-8bit` (26B-A4B MoE)
+
 The model names describe the architecture:
 
-- `dense` is the Qwen3.6 27B dense model. All parameters participate in every
+- `dense` is a dense transformer model where all parameters participate in every
   token, which makes compute and memory use more direct and predictable.
-- `moe` is the Qwen3.6 35B-A3B Mixture-of-Experts model. It has about 35B total
-  parameters, but routes each token through only a small active subset of
-  experts (about 3B active parameters). MoE can offer more total capacity for a
-  similar amount of active compute, but the full expert weights still need to be
-  stored and loaded.
+  - `qwen-3.6-dense`: Qwen3.6 27B dense with MTP speculation
+  - `gemma-4-dense`: Gemma 4 31B dense
+- `moe` is a Mixture-of-Experts model. It has many total parameters, but routes
+  each token through only a small active subset of experts. MoE can offer more
+  total capacity for a similar amount of active compute, but the full expert
+  weights still need to be stored and loaded.
+  - `qwen-3.6-moe`: Qwen3.6 35B-A3B MoE (~3B active)
+  - `gemma-4-moe`: Gemma 4 26B-A4B MoE (~4B active)
 
 The `moe` (35B-A3B) models are downloaded from
 [`havenoammo/Qwen3.6-35B-A3B-MTP-GGUF`](https://huggingface.co/havenoammo/Qwen3.6-35B-A3B-MTP-GGUF)
@@ -37,6 +51,11 @@ at revision `431204640c8511573e61a7964a12cc452114a223`. Pinning the
 revisions keeps downloads reproducible if upstream `main` moves; set
 `LLAMACPP_QWEN_35B_A3B_REVISION`, `LLAMACPP_QWEN_27B_REVISION`, or
 `LLAMACPP_QWEN_REVISION` to override.
+
+The Gemma 4 models are downloaded from
+[`unsloth/gemma-4-31B-it-GGUF`](https://huggingface.co/unsloth/gemma-4-31B-it-GGUF)
+and [`unsloth/gemma-4-26B-A4B-it-GGUF`](https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF)
+at pinned revisions (`LLAMACPP_GEMMA_4_31B_REVISION` / `LLAMACPP_GEMMA_4_26B_A4B_REVISION`).
 These files need llama.cpp MTP/NextN support, so the default runtime path builds
 a pinned snapshot of [llama.cpp pull request #22673](https://github.com/ggml-org/llama.cpp/pull/22673)
 instead of using the stock binary release.
@@ -64,6 +83,8 @@ Runtime state is kept under `~/.pi/llamacpp`:
 - `downloads/`: release archives and resumable `.part` files
 - `models/havenoammo/Qwen3.6-35B-A3B-MTP-GGUF/`: cached `moe` (35B-A3B) GGUF model files
 - `models/froggeric/Qwen3.6-27B-MTP-GGUF/`: cached `dense` (27B) GGUF model files
+- `models/unsloth/gemma-4-31B-it-GGUF/`: cached Gemma 4 31B dense GGUF model files
+- `models/unsloth/gemma-4-26B-A4B-it-GGUF/`: cached Gemma 4 26B-A4B MoE GGUF model files
 - `clients/`: active Pi process leases
 - `server.json`: managed `llama-server` state
 - `log`: download/extract/server/watchdog log

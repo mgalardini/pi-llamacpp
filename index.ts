@@ -1,7 +1,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { streamOpenAICompletions } from "@earendil-works/pi-ai";
 import type { AssistantMessage, Context, Model, SimpleStreamOptions } from "@earendil-works/pi-ai";
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
 import { closeSync, constants, openSync, writeSync } from "node:fs";
 import { createServer } from "node:net";
@@ -62,6 +62,13 @@ const QWEN_35B_A3B_REVISION =
 	"44ce525026e7e7d0e0915dc1bf83a783c813e75a";
 const QWEN_27B_REPO = process.env.LLAMACPP_QWEN_27B_REPO ?? "froggeric/Qwen3.6-27B-MTP-GGUF";
 const QWEN_27B_REVISION = process.env.LLAMACPP_QWEN_27B_REVISION ?? "431204640c8511573e61a7964a12cc452114a223";
+
+// Gemma 4 model repos and pinned revisions from unsloth (reputable quantizer)
+const GEMMA_4_31B_REPO = process.env.LLAMACPP_GEMMA_4_31B_REPO ?? "unsloth/gemma-4-31B-it-GGUF";
+const GEMMA_4_31B_REVISION = process.env.LLAMACPP_GEMMA_4_31B_REVISION ?? "3f07b20fc8e73cec677713305971e534fe8c4ce3";
+const GEMMA_4_26B_A4B_REPO = process.env.LLAMACPP_GEMMA_4_26B_A4B_REPO ?? "unsloth/gemma-4-26B-A4B-it-GGUF";
+const GEMMA_4_26B_A4B_REVISION = process.env.LLAMACPP_GEMMA_4_26B_A4B_REVISION ?? "3365c68df1a83799b846d05324ebfadbb8cc70b3";
+
 const DEFAULT_CTX_SIZE = Number(process.env.LLAMACPP_CTX_SIZE ?? 262144);
 const DEFAULT_MAX_TOKENS = Number(process.env.LLAMACPP_MAX_TOKENS ?? 65536);
 
@@ -186,6 +193,74 @@ const MODELS: ManagedModel[] = [
 		size: 29_047_086_752,
 		sha256: "15de87dd41f9a05c2b8938c4a7234280a5b148f2ac047b7f80abca548a768b2f",
 	},
+	// Gemma 4 31B dense models (comparable to Qwen3.6 27B dense)
+	{
+		id: "gemma-4-dense-2bit",
+		name: "gemma-4-dense-2bit",
+		repo: GEMMA_4_31B_REPO,
+		revision: GEMMA_4_31B_REVISION,
+		quant: "q2",
+		bits: 2,
+		filename: "gemma-4-31B-it-UD-IQ2_M.gguf",
+		size: 10_752_818_176,
+		sha256: "1a1393c3339e0dc51a68497ac74878d0f321e31e0ce77ffe2f7f1c9328897aee",
+	},
+	{
+		id: "gemma-4-dense-4bit",
+		name: "gemma-4-dense-4bit",
+		repo: GEMMA_4_31B_REPO,
+		revision: GEMMA_4_31B_REVISION,
+		quant: "q4",
+		bits: 4,
+		filename: "gemma-4-31B-it-UD-Q4_K_XL.gguf",
+		size: 18_822_968_320,
+		sha256: "dd69c1566b0d559f303424e2b00e830837bb6c8b25e5baa08c75f11709bd41db",
+	},
+	{
+		id: "gemma-4-dense-8bit",
+		name: "gemma-4-dense-8bit",
+		repo: GEMMA_4_31B_REPO,
+		revision: GEMMA_4_31B_REVISION,
+		quant: "q8",
+		bits: 8,
+		filename: "gemma-4-31B-it-UD-Q8_K_XL.gguf",
+		size: 35_020_039_168,
+		sha256: "e2ad55395f36af91f1779f2aceecb0f7dcefde52a4fc680f29205d671f5e1569",
+	},
+	// Gemma 4 26B-A4B MoE models (comparable to Qwen3.6 35B-A3B MoE)
+	{
+		id: "gemma-4-moe-2bit",
+		name: "gemma-4-moe-2bit",
+		repo: GEMMA_4_26B_A4B_REPO,
+		revision: GEMMA_4_26B_A4B_REVISION,
+		quant: "q2",
+		bits: 2,
+		filename: "gemma-4-26B-A4B-it-UD-IQ2_M.gguf",
+		size: 10_014_753_312,
+		sha256: "9999bd11e44ea81c93d1652e45631d531963b2b24eae6ef7bf7b524cdaf79ed0",
+	},
+	{
+		id: "gemma-4-moe-4bit",
+		name: "gemma-4-moe-4bit",
+		repo: GEMMA_4_26B_A4B_REPO,
+		revision: GEMMA_4_26B_A4B_REVISION,
+		quant: "q4",
+		bits: 4,
+		filename: "gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf",
+		size: 17_010_978_592,
+		sha256: "453cf049ba87a29b9ed5739087b84b7fa0265a4f2b11eefa2c77683dec6a8020",
+	},
+	{
+		id: "gemma-4-moe-8bit",
+		name: "gemma-4-moe-8bit",
+		repo: GEMMA_4_26B_A4B_REPO,
+		revision: GEMMA_4_26B_A4B_REVISION,
+		quant: "q8",
+		bits: 8,
+		filename: "gemma-4-26B-A4B-it-UD-Q8_K_XL.gguf",
+		size: 27_636_230_944,
+		sha256: "50e180d69641e017d7e08a6f602988effde8232ff6bc0231e839636fdcc03d8f",
+	},
 ];
 
 const MODEL_BY_ID = new Map(MODELS.map((model) => [model.id, model]));
@@ -253,6 +328,28 @@ let shuttingDown = false;
 let writeSeq = 0;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Detect available CUDA GPU device indices by running nvidia-smi.
+ * Returns an array of device indices (e.g., [0, 1]) or an empty array if
+ * nvidia-smi fails or no GPUs are found.
+ */
+function detectGpuDevices(): number[] {
+	try {
+		const output = execSync(
+			"nvidia-smi --query-gpu=index --format=csv,noheader",
+			{ encoding: "utf8", timeout: 5_000, stdio: ["ignore", "pipe", "pipe"] },
+		);
+		const devices = output
+			.trim()
+			.split(/\r?\n/)
+			.map((line) => Number(line.trim()))
+			.filter((idx) => Number.isFinite(idx));
+		return devices.length > 0 ? devices : [];
+	} catch {
+		return [];
+	}
+}
 
 function parseOptionalPort(value: string | undefined): number | undefined {
 	if (!value) return undefined;
@@ -1336,6 +1433,8 @@ async function writeAdoptedServerStateLocked(pid: number, model: ManagedModel, b
 }
 
 function serverArgs(model: ManagedModel, modelFile: string, port: number): string[] {
+	const isGemma4 = model.id.startsWith("gemma-4");
+
 	const args = [
 		"--host",
 		LLAMACPP_HOST,
@@ -1348,23 +1447,41 @@ function serverArgs(model: ManagedModel, modelFile: string, port: number): strin
 		"--ctx-size",
 		String(DEFAULT_CTX_SIZE),
 		"--jinja",
-		"--reasoning-format",
-		"deepseek",
-		"--reasoning",
-		"auto",
 	];
+
+	// Qwen3.6 models use DeepSeek-style thinking format and support MTP speculation.
+	// Gemma 4 models use standard chat template without native thinking/MTP support.
+	if (!isGemma4) {
+		args.push("--reasoning-format", "deepseek", "--reasoning", "auto");
+	}
 
 	const mtpSetting = process.env.LLAMACPP_ENABLE_MTP?.toLowerCase();
 	const enableMtp = mtpSetting !== "0" && mtpSetting !== "false" && mtpSetting !== "no";
 
 	const parallel = process.env.LLAMACPP_PARALLEL;
 	if (parallel) args.push("--parallel", parallel);
-	else if (enableMtp) args.push("--parallel", "1");
+	else if (enableMtp && !isGemma4) args.push("--parallel", "1");
 
-	const gpuLayers = process.env.LLAMACPP_GPU_LAYERS;
-	if (gpuLayers) args.push("--n-gpu-layers", gpuLayers);
+	const explicitGpuLayers = process.env.LLAMACPP_GPU_LAYERS;
 
-	if (enableMtp) args.push("--spec-type", "mtp", "--spec-draft-n-max", process.env.LLAMACPP_MTP_DRAFT_N_MAX ?? "3");
+	// Auto-detect GPUs and configure multi-GPU inference
+	const gpuDevices = detectGpuDevices();
+	if (gpuDevices.length > 0) {
+		// llama.cpp uses backend-prefixed device names like CUDA0, CUDA1
+		args.push("--device", gpuDevices.map((idx) => `CUDA${idx}`).join(","));
+
+		// Default to offloading all layers when GPUs are available
+		if (explicitGpuLayers) {
+			args.push("--n-gpu-layers", explicitGpuLayers);
+		} else {
+			// 200 is high enough to offload all layers for any current model
+			args.push("--n-gpu-layers", "200");
+		}
+	} else if (explicitGpuLayers) {
+		args.push("--n-gpu-layers", explicitGpuLayers);
+	}
+
+	if (enableMtp && !isGemma4) args.push("--spec-type", "mtp", "--spec-draft-n-max", process.env.LLAMACPP_MTP_DRAFT_N_MAX ?? "3");
 
 	const extra = process.env.LLAMACPP_SERVER_ARGS;
 	if (extra) args.push(...extra.split(/\s+/).filter(Boolean));
@@ -1386,6 +1503,14 @@ async function startServerLocked(runtimeDir: string, model: ManagedModel, modelF
 	if (existingPid) throw new Error(`Port ${port} is already in use by ${await describeProcess(existingPid)}; cannot start llama-server`);
 	const baseUrl = apiBaseUrlForPort(port);
 	const args = serverArgs(model, modelFile, port);
+
+	// Build child process environment with GPU device visibility
+	const childEnv: Record<string, string | undefined> = { ...process.env };
+	const gpuDevices = detectGpuDevices();
+	if (gpuDevices.length > 0) {
+		childEnv["CUDA_VISIBLE_DEVICES"] = gpuDevices.join(",");
+	}
+
 	await appendLog(`\n[${new Date().toISOString()}] start llama-server (${model.id}) on ${baseUrl}\n$ ${[binary, ...args].map(shellQuote).join(" ")}\n`);
 	const logFd = openSync(LOG_FILE, "a");
 	let childPid: number | undefined;
@@ -1394,7 +1519,7 @@ async function startServerLocked(runtimeDir: string, model: ManagedModel, modelF
 			cwd: runtimeDir,
 			detached: true,
 			stdio: ["ignore", logFd, logFd],
-			env: process.env,
+			env: childEnv,
 		});
 		child.unref();
 		childPid = child.pid;
@@ -1772,14 +1897,18 @@ function registerLlamaCppProvider(pi: ExtensionAPI): void {
 		models: MODELS.map((model) => ({
 			id: model.id,
 			name: model.name,
-			reasoning: true,
-			thinkingLevelMap: {
-				minimal: null,
-				low: null,
-				medium: null,
-				high: "enabled",
-				xhigh: null,
-			},
+			reasoning: !model.id.startsWith("gemma-4"),
+			...(model.id.startsWith("gemma-4")
+				? {}
+				: {
+						thinkingLevelMap: {
+							minimal: null,
+							low: null,
+							medium: null,
+							high: "enabled",
+							xhigh: null,
+						},
+					}),
 			input: ["text"],
 			contextWindow: DEFAULT_CTX_SIZE,
 			maxTokens: DEFAULT_MAX_TOKENS,
