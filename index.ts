@@ -1842,7 +1842,17 @@ function streamLlamaCpp(model: Model<any>, context: Context, options?: SimpleStr
 	void (async () => {
 		try {
 			const managedModel = MODEL_BY_ID.get(model.id);
-			if (!managedModel) throw new Error(`Unknown llama.cpp model: ${model.id}`);
+			if (!managedModel) {
+				// This provider's streamSimple is registered for the "openai-completions" api
+				// slot, which means it is invoked for ALL openai-completions models across
+				// every provider (e.g. openrouter, custom providers).  For any model that
+				// isn't one of our managed local GGUFs, delegate to the standard
+				// streamOpenAICompletions implementation so those models keep working.
+				for await (const event of streamOpenAICompletions(model, context, options) as any)
+					stream.push(event);
+				stream.end();
+				return;
+			}
 
 			const alreadyReady = await checkHttpReady(managedModel.id);
 			const status = createStartupStatusCallback(activeProviderContext, !alreadyReady);
