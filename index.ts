@@ -112,7 +112,7 @@ const WATCHDOG_SCRIPT = process.env.LLAMACPP_WATCHDOG_SCRIPT
 	? resolve(process.env.LLAMACPP_WATCHDOG_SCRIPT)
 	: join(EXTENSION_DIR, WATCHDOG_SCRIPT_NAME);
 
-type ModelQuant = "q2" | "q4" | "q8";
+type ModelQuant = "q2" | "q4" | "q6" | "q8";
 
 type ManagedModel = {
 	id: string;
@@ -161,6 +161,17 @@ const MODELS: ManagedModel[] = [
 		sha256: "3720209c5729265b0967445e3f4d2d46d6455bc21123958fd4cac203f3277478",
 	},
 	{
+		id: "qwen-3.6-moe-6bit",
+		name: "qwen-3.6-moe-6bit",
+		repo: QWEN_35B_A3B_REPO,
+		revision: QWEN_35B_A3B_REVISION,
+		quant: "q6",
+		bits: 6,
+		filename: "Qwen3.6-35B-A3B-MTP-UD-Q6_K_XL.gguf",
+		size: 32_741_241_248,
+		sha256: "db069dec4a81547762531db14bbefd4fce614816760c7f554171636784783e7d",
+	},
+	{
 		id: "qwen-3.6-dense-2bit",
 		name: "qwen-3.6-dense-2bit",
 		repo: QWEN_27B_REPO,
@@ -192,6 +203,17 @@ const MODELS: ManagedModel[] = [
 		filename: "Qwen3.6-27B-Q8_0-mtp.gguf",
 		size: 29_047_086_752,
 		sha256: "15de87dd41f9a05c2b8938c4a7234280a5b148f2ac047b7f80abca548a768b2f",
+	},
+	{
+		id: "qwen-3.6-dense-6bit",
+		name: "qwen-3.6-dense-6bit",
+		repo: QWEN_27B_REPO,
+		revision: QWEN_27B_REVISION,
+		quant: "q6",
+		bits: 6,
+		filename: "Qwen3.6-27B-Q6_K-mtp.gguf",
+		size: 22_431_001_504,
+		sha256: "5ae5811559e9f7b731e583cd4c215a079c77c4b7d7f7f5790db9d16bda85423f",
 	},
 	// Gemma 4 31B dense models (comparable to Qwen3.6 27B dense)
 	{
@@ -227,6 +249,17 @@ const MODELS: ManagedModel[] = [
 		size: 35_020_039_168,
 		sha256: "e2ad55395f36af91f1779f2aceecb0f7dcefde52a4fc680f29205d671f5e1569",
 	},
+	{
+		id: "gemma-4-dense-6bit",
+		name: "gemma-4-dense-6bit",
+		repo: GEMMA_4_31B_REPO,
+		revision: GEMMA_4_31B_REVISION,
+		quant: "q6",
+		bits: 6,
+		filename: "gemma-4-31B-it-UD-Q6_K_XL.gguf",
+		size: 27_521_336_320,
+		sha256: "8ba9abd36e4dabdfad20af0a2c626a339e81cf59ba1e2e4a1750a518abc8aa92",
+	},
 	// Gemma 4 26B-A4B MoE models (comparable to Qwen3.6 35B-A3B MoE)
 	{
 		id: "gemma-4-moe-2bit",
@@ -260,6 +293,17 @@ const MODELS: ManagedModel[] = [
 		filename: "gemma-4-26B-A4B-it-UD-Q8_K_XL.gguf",
 		size: 27_636_230_944,
 		sha256: "50e180d69641e017d7e08a6f602988effde8232ff6bc0231e839636fdcc03d8f",
+	},
+	{
+		id: "gemma-4-moe-6bit",
+		name: "gemma-4-moe-6bit",
+		repo: GEMMA_4_26B_A4B_REPO,
+		revision: GEMMA_4_26B_A4B_REVISION,
+		quant: "q6",
+		bits: 6,
+		filename: "gemma-4-26B-A4B-it-UD-Q6_K_XL.gguf",
+		size: 23_295_389_472,
+		sha256: "5cfb7ab424c01388538005f26573f3bd374d3140cc021a1c44249e69928882a4",
 	},
 ];
 
