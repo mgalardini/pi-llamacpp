@@ -176,7 +176,8 @@ stop_server() {
 log "started for $llamacpp_dir"
 waiting_for_clients=0
 while :; do
-  if [ "$(active_lease_count)" -eq 0 ]; then
+  count=$(active_lease_count)
+  if [ "$count" -eq 0 ]; then
     if server_has_clients; then
       if [ "$waiting_for_clients" -eq 0 ]; then
         log "no active llama.cpp leases, but llama-server still has clients; waiting"
