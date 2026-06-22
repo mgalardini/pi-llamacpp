@@ -52,7 +52,15 @@ const LLAMACPP_HOST = process.env.LLAMACPP_HOST ?? "127.0.0.1";
 // that port through server.json.  Set LLAMACPP_PORT only when you explicitly want
 // a stable port for debugging.
 const LLAMACPP_PORT = parseOptionalPort(process.env.LLAMACPP_PORT);
-const PROVIDER_BASE_URL = LLAMACPP_PORT ? apiBaseUrlForPort(LLAMACPP_PORT) : apiBaseUrlForPort(0);
+// The port the provider is registered with, and the port llama-server binds.  pi
+// only routes the *first* turn of an agent loop through our streamSimple override
+// (which patches the baseUrl to the live server); follow-up turns are dispatched by
+// pi-ai's builtin openai-completions path using the provider's *registered*
+// baseUrl.  So that registered baseUrl must already point at the real server — a
+// port-0 placeholder makes every turn after the first fail with "Connection error"
+// (ECONNREFUSED on 127.0.0.1:0).  When LLAMACPP_PORT is unset we therefore pick a
+// free port once at startup (resolveServerPort) and reuse it everywhere.
+let resolvedServerPort = LLAMACPP_PORT;
 const API_KEY = process.env.LLAMACPP_API_KEY ?? "llamacpp-local";
 
 const QWEN_35B_A3B_REPO = process.env.LLAMACPP_QWEN_35B_A3B_REPO ?? process.env.LLAMACPP_QWEN_REPO ?? "havenoammo/Qwen3.6-35B-A3B-MTP-GGUF";
@@ -412,8 +420,7 @@ function apiBaseUrlForPort(port: number): string {
 	return `${baseUrlForPort(port)}/v1`;
 }
 
-async function chooseServerPort(): Promise<number> {
-	if (LLAMACPP_PORT) return LLAMACPP_PORT;
+function allocateFreePort(): Promise<number> {
 	return new Promise((resolvePromise, reject) => {
 		const server = createServer();
 		server.unref();
@@ -430,8 +437,25 @@ async function chooseServerPort(): Promise<number> {
 	});
 }
 
+// Resolve the port the provider/server will use, once, at extension load.  Must run
+// before registerLlamaCppProvider so the provider's registered baseUrl carries a
+// real port (see the resolvedServerPort comment).
+async function resolveServerPort(): Promise<number> {
+	if (resolvedServerPort) return resolvedServerPort;
+	resolvedServerPort = await allocateFreePort();
+	return resolvedServerPort;
+}
+
+async function chooseServerPort(): Promise<number> {
+	return resolvedServerPort ?? (await resolveServerPort());
+}
+
+function providerBaseUrl(): string {
+	return apiBaseUrlForPort(resolvedServerPort ?? 0);
+}
+
 function describeApiBaseUrl(): string {
-	return LLAMACPP_PORT ? apiBaseUrlForPort(LLAMACPP_PORT) : "dynamic localhost port";
+	return resolvedServerPort ? apiBaseUrlForPort(resolvedServerPort) : "dynamic localhost port";
 }
 
 function describeError(error: unknown): string {
@@ -832,7 +856,7 @@ async function ensureWatchdog(): Promise<void> {
 				LLAMACPP_CLIENT_DIR: CLIENT_DIR,
 				LLAMACPP_STATE_FILE: STATE_FILE,
 				LLAMACPP_LOG_FILE: LOG_FILE,
-				LLAMACPP_PORT: LLAMACPP_PORT ? String(LLAMACPP_PORT) : "",
+				LLAMACPP_PORT: resolvedServerPort ? String(resolvedServerPort) : "",
 				LLAMACPP_LEASE_TTL_S: String(Math.ceil(LEASE_TTL_MS / 1000)),
 				LLAMACPP_WATCHDOG_POLL_S: String(Math.max(1, Math.ceil(WATCHDOG_POLL_MS / 1000))),
 				LLAMACPP_SHUTDOWN_GRACE_S: String(Math.ceil(SHUTDOWN_GRACE_MS / 1000)),
@@ -1944,7 +1968,7 @@ function streamLlamaCpp(model: Model<any>, context: Context, options?: SimpleStr
 function registerLlamaCppProvider(pi: ExtensionAPI): void {
 	pi.registerProvider(PROVIDER_ID, {
 		name: "llama.cpp local",
-		baseUrl: PROVIDER_BASE_URL,
+		baseUrl: providerBaseUrl(),
 		api: "openai-completions",
 		apiKey: API_KEY,
 		streamSimple: streamLlamaCpp,
@@ -1980,7 +2004,7 @@ function registerLlamaCppProvider(pi: ExtensionAPI): void {
 	} as any);
 }
 
-export default function (pi: ExtensionAPI) {
+export default async function (pi: ExtensionAPI) {
 	runtimeDisposed = false;
 	shuttingDown = false;
 	leaseStartedAt = Date.now();
@@ -1992,6 +2016,14 @@ export default function (pi: ExtensionAPI) {
 	activeProviderContext = undefined;
 	resolvedRuntimeDir = undefined;
 	resolvedRuntimeAsset = undefined;
+
+	// Pin the port before registering the provider so its registered baseUrl points
+	// at the real server (port 0 would break every turn after the first).
+	try {
+		await resolveServerPort();
+	} catch (error) {
+		void appendLog(`[${new Date().toISOString()}] failed to pre-allocate llama-server port: ${describeError(error)}\n`).catch(() => {});
+	}
 
 	registerLlamaCppProvider(pi);
 	registerLlamaCppCommand(pi);
