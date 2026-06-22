@@ -1499,8 +1499,15 @@ function serverArgs(model: ManagedModel, modelFile: string, port: number): strin
 		args.push("--reasoning-format", "deepseek", "--reasoning", "auto");
 	}
 
+	// MTP speculative decoding (--spec-type mtp) relies on llama.cpp's unmerged
+	// MTP/NextN support (PR #22673). On GPU workstations it has been observed to
+	// wedge the server after the first generation: the process stays alive and
+	// "idle" but stops accepting new connections, so the next request fails with a
+	// transport-level "Connection error", and the server double-frees on shutdown.
+	// Make it opt-in until that path is stable. Set LLAMACPP_ENABLE_MTP=1 to test
+	// the speculative path; leave it unset/0 for the safe, plain-decoding default.
 	const mtpSetting = process.env.LLAMACPP_ENABLE_MTP?.toLowerCase();
-	const enableMtp = mtpSetting !== "0" && mtpSetting !== "false" && mtpSetting !== "no";
+	const enableMtp = mtpSetting === "1" || mtpSetting === "true" || mtpSetting === "yes" || mtpSetting === "on";
 
 	const parallel = process.env.LLAMACPP_PARALLEL;
 	if (parallel) args.push("--parallel", parallel);
