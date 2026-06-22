@@ -93,12 +93,6 @@ The managed server binds to a random localhost port by default and records the
 active endpoint in `server.json`. Set `LLAMACPP_PORT` only if you explicitly
 want a fixed port.
 
-MTP speculative decoding (`--spec-type mtp`) is **off by default** because the
-unmerged MTP/NextN path (PR #22673) has been seen to wedge the server after the
-first generation — the process stays alive but stops accepting connections, so
-later requests fail with `Connection error`. Set `LLAMACPP_ENABLE_MTP=1` to opt
-back into the speculative path.
-
 ## Debugging
 
 Use `/llamacpp` inside Pi to show the live llama.cpp log, `/llamacpp status` for

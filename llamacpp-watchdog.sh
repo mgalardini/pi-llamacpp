@@ -26,8 +26,17 @@ pid_alive() {
   [ -n "${1:-}" ] && kill -0 "$1" 2>/dev/null
 }
 
+# Return the file mtime as an integer epoch, or 0 if it can't be determined.
+# GNU stat (`-c %Y`) is tried first because on Linux the BSD form `stat -f %m`
+# is interpreted as `--file-system` and prints a whole filesystem-status block
+# (and exits non-zero), which would otherwise leak into the value and break the
+# arithmetic below ("Illegal number"). BSD/macOS stat is used as the fallback.
 mtime_sec() {
-  stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0
+  out=$(stat -c %Y "$1" 2>/dev/null) || out=$(stat -f %m "$1" 2>/dev/null) || out=""
+  case "$out" in
+    *[!0-9]* | "") echo 0 ;;
+    *) echo "$out" ;;
+  esac
 }
 
 process_args() {
