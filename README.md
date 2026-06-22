@@ -58,7 +58,10 @@ and [`unsloth/gemma-4-26B-A4B-it-GGUF`](https://huggingface.co/unsloth/gemma-4-2
 at pinned revisions (`LLAMACPP_GEMMA_4_31B_REVISION` / `LLAMACPP_GEMMA_4_26B_A4B_REVISION`).
 These files need llama.cpp MTP/NextN support, so the default runtime path builds
 a pinned snapshot of [llama.cpp pull request #22673](https://github.com/ggml-org/llama.cpp/pull/22673)
-instead of using the stock binary release.
+instead of using the stock binary release. When `nvidia-smi` reports GPUs, the
+source build is configured with `-DGGML_CUDA=ON` automatically; override the
+backend with `LLAMACPP_CMAKE_ARGS` (e.g. `-DGGML_HIP=ON`). To force a clean
+rebuild, delete the cached `build/` directory under `source/<ref>/`.
 
 ## Install
 

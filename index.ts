@@ -1145,6 +1145,14 @@ async function ensureSourceRuntime(onStatus?: StatusCallback): Promise<string> {
 	const existing = await findLlamaServerBinary(runtimeDir);
 	if (existing) return runtimeDir;
 
+	// Enable CUDA when GPUs are present, otherwise the rebuilt binary is CPU-only
+	// and rejects the `--device CUDA0,...` flags we pass at launch ("invalid
+	// device: CUDA0"), so the server exits immediately. Skip if the caller already
+	// pinned a GGML backend via LLAMACPP_CMAKE_ARGS.
+	const extraCmakeArgs = splitArgs(process.env.LLAMACPP_CMAKE_ARGS);
+	const backendAlreadySet = extraCmakeArgs.some((arg) => /^-DGGML_(CUDA|HIP|VULKAN|METAL|SYCL|CANN)=/i.test(arg));
+	const cudaArgs = !backendAlreadySet && detectGpuDevices().length > 0 ? ["-DGGML_CUDA=ON"] : [];
+
 	onStatus?.("configuring llama.cpp");
 	await runLogged(
 		"cmake",
@@ -1155,7 +1163,8 @@ async function ensureSourceRuntime(onStatus?: StatusCallback): Promise<string> {
 			buildDir,
 			"-DCMAKE_BUILD_TYPE=Release",
 			"-DLLAMA_BUILD_TESTS=OFF",
-			...splitArgs(process.env.LLAMACPP_CMAKE_ARGS),
+			...cudaArgs,
+			...extraCmakeArgs,
 		],
 		LLAMACPP_DIR,
 		"configure llama.cpp",
